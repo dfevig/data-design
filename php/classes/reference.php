@@ -164,7 +164,7 @@ class Reference {
 			throw(new RangeException("the page number is not a positive"));
 		}
 		//convert and store the page number
-		$this->pageNumv = intval($newPageNum);
+		$this->pageNum = intval($newPageNum);
 	}
 	/**
 	 * accessor method for the link type
@@ -184,21 +184,193 @@ class Reference {
 	public function setLinkType($newLinkType) {
 		//verify the link type is valid
 		$newLinkType = trim($newLinkType);
-		$newLinkType = filter_var(($newLinkType, FILTER_VALIDATE_URL));
+		$newLinkType = filter_var($newLinkType, FILTER_VALIDATE_URL);
 		if(empty($newLinkType) === true){
 			throw(new InvalidArgumentException("link type content empty or invalid"));
-		}
-	public function setLinkType($newLinkType) {
-			//verify the link type URL is valid
-			$newLinkType = trim($newLinkType);
-			$newLinkType = filter_var(($newLinkType, FILTER_SANITIZE_URL));
-		if($newLinkType === false){
-			throw(new InvalidArgumentException("link type URL is invalid"));
 		}
 		//convert and store link type
 		$this->linkType = intval($newLinkType);
 	}
 
+	/**
+	 * insert this reference into mySQL
+	 *
+	 * @param resource #mysqli pointer to mySQL connection by reference
+	 * @throws mysqli_sql_exception when mySQL related errors occur
+	 **/
+	public function insert(&$mysqli){
+		// handle degenerate cases
+		if(gettype($mysqli) !== "object" || get_class($mysqli) !== "mysqli") {
+			throw(new mysqli_sql_exception("input is not a mysqli object"));
+		}
+		//enforce the referenceId is null (i.e., don't insert a reference that already exists
+		if($this->referenceId !== null) {
+			throw(new mysqli_sql_exception("not a new reference"));
+		}
+		// create query template
+		$query	= "INSERT INTO reference(referenceId, author, journalName, linkType, pageNum) VALUES (?,?,?,?,?)";
+		$statement = $mysqli->prepare($query);
+		if($statement === false) {
+			throw(new mysqli_sql_exception("unable to prepare statement"));
+		}
+		//bind the member variables to the place holders in the template
+		$wasClean	= $statement->bind_param("isssi", $this->referenceId, $this->author, $this->journalName, $this->linkType, $this->pageNum);
+		if($wasClean === false) {
+			throw(new mysqli_sql_exception("unable to bind parameters"));
+		}
+		//execute the statement
+		if($statement->execute() === false) {
+			throw(new mysqli_sql_exception("unable to execute mySQL statement: " . $statement->error));
+		}
+		//update the null referenceId with what mySQL just gave us
+		$this->referenceId = $mysqli->insert_id;
+		//clean up statement
+		$statement->close();
 	}
+	/**
+	 * deletes this Reference from mySQL
+	 *
+	 * @param resource $mysqli pointer to mySQL connection, by reference
+	 * @throws mysqli_sql_exception when mySQL related errors occur
+	 **/
+	public function delete(&$mysqli) {
+		// handle degenerate cases
+		if(gettype($mysqli) !== "object" || get_class($mysqli) !== "mysqli") {
+			throw(new mysqli_sql_exception("input is not a mysqli object"));
+		}
+
+		// enforce the referenceId is not null (i.e., don't delete a reference that hasn't been inserted)
+		if($this->referenceId === null) {
+			throw(new mysqli_sql_exception("unable to delete a reference that does not exist"));
+		}
+
+		// create query template
+		$query	 = "DELETE FROM reference WHERE referenceId = ?";
+		$statement = $mysqli->prepare($query);
+		if($statement === false) {
+			throw(new mysqli_sql_exception("unable to prepare statement"));
+		}
+
+		// bind the member variables to the place holder in the template
+		$wasClean = $statement->bind_param("i", $this->referenceId);
+		if($wasClean === false) {
+			throw(new mysqli_sql_exception("unable to bind parameters"));
+		}
+
+		// execute the statement
+		if($statement->execute() === false) {
+			throw(new mysqli_sql_exception("unable to execute mySQL statement: " . $statement->error));
+		}
+
+		// clean up the statement
+		$statement->close();
+	}
+	/**
+	 * updates the Reference in mySQL
+	 *
+	 * @param resource $mysqli pointer to mySQL connection, by reference
+	 * @throws mysqli_sql_exception when mySQL related errors occur
+	 **/
+	public function update(&$mysqli) {
+		// handle degenerate cases
+		if(gettype($mysqli) !== "object" || get_class($mysqli) !== "mysqli") {
+			throw(new mysqli_sql_exception("input is not a mysqli object"));
+		}
+
+		// enforce the referenceId is not null (i.e., don't update a reference that hasn't been inserted)
+		if($this->referenceId === null) {
+			throw(new mysqli_sql_exception("unable to update a reference that does not exist"));
+		}
+		// create query template
+		$query	 = "UPDATE reference SET author = ?, journalName = ?, linkType = ?, pageNum = ? WHERE referenceId = ?";
+		$statement = $mysqli->prepare($query);
+		if($statement === false) {
+			throw(new mysqli_sql_exception("unable to prepare statement"));
+		}
+
+		// bind the member variables to the place holders in the template
+		$wasClean	= $statement->bind_param("isssi", $this->referenceId, $this->author, $this->journalName, $this->linkType, $this->pageNum);
+		if($wasClean === false) {
+			throw(new mysqli_sql_exception("unable to bind parameters"));
+		}
+
+		// execute the statement
+		if($statement->execute() === false) {
+			throw(new mysqli_sql_exception("unable to execute mySQL statement: " . $statement->error));
+		}
+
+		// clean up the statement
+		$statement->close();
+	}
+	/**
+	 * gets the Reference by content
+	 *
+	 * @param resource $mysqli pointer to mySQL connection, by reference
+	 * @param string $author name  to search for
+	 * @return mixed array of References found, Reference found, or null if not found
+	 * @throws mysqli_sql_exception when mySQL related errors occur
+	 **/
+	public static function getReferenceByAuthor(&$mysqli, $author) {
+		// handle degenerate cases
+		if(gettype($mysqli) !== "object" || get_class($mysqli) !== "mysqli") {
+			throw(new mysqli_sql_exception("input is not a mysqli object"));
+		}
+
+		// sanitize the description before searching
+		$tweetContent = trim($tweetContent);
+		$tweetContent = filter_var($tweetContent, FILTER_SANITIZE_STRING);
+
+		// create query template
+		$query	 = "SELECT tweetId, profileId, tweetContent, tweetDate FROM tweet WHERE tweetContent LIKE ?";
+		$statement = $mysqli->prepare($query);
+		if($statement === false) {
+			throw(new mysqli_sql_exception("Unable to prepare statement"));
+		}
+
+		// bind the tweet content to the place holder in the template
+		$tweetContent = "%$tweetContent%";
+		$wasClean = $statement->bind_param("s", $tweetContent);
+		if($wasClean === false) {
+			throw(new mysqli_sql_exception("Unable to bind parameters"));
+		}
+
+		// execute the statement
+		if($statement->execute() === false) {
+			throw(new mysqli_sql_exception("Unable to execute mySQL statement"));
+		}
+
+		// get result from the SELECT query
+		$result = $statement->get_result();
+		if($result === false) {
+			throw(new mysqli_sql_exception("Unable to get result set"));
+		}
+
+		// build an array of tweet
+		$tweets = array();
+		while(($row = $result->fetch_assoc()) !== null) {
+			try {
+				$tweet	= new Tweet($row["tweetId"], $row["profileId"], $row["tweetContent"], $row["tweetDate"]);
+				$tweets[] = $tweet;
+			}
+			catch(Exception $exception) {
+				// if the row couldn't be converted, rethrow it
+				throw(new mysqli_sql_exception("Unable to convert row to Tweet", 0, $exception));
+			}
+		}
+
+		// count the results in the array and return:
+		// 1) null if 0 results
+		// 2) a single object if 1 result
+		// 3) the entire array if > 1 result
+		$numberOfTweets = count($tweets);
+		if($numberOfTweets === 0) {
+			return(null);
+		} else if($numberOfTweets === 1) {
+			return($tweets[0]);
+		} else {
+			return($tweets);
+		}
+	}
+}
 
 ?>
