@@ -38,7 +38,7 @@ class Reference {
 	 * @param int $newPageNum int of the page number
 	 * @param string $newLinkType string of the link type associated
 	 * @throws InvalidArgumentException if data types are not valid
-	 * @thorws RangeException if data values are out of bounds (e.g., incorrect strings, negative numbers)
+	 * @throws RangeException if data values are out of bounds (e.g., incorrect strings, negative numbers)
 	 **/
 	public function __construct($newReferenceId, $newAuthor, $newJournalName, $newPageNum, $newLinkType) {
 		try {
@@ -317,19 +317,19 @@ class Reference {
 		}
 
 		// sanitize the description before searching
-		$tweetContent = trim($tweetContent);
-		$tweetContent = filter_var($tweetContent, FILTER_SANITIZE_STRING);
+		$author = trim($author);
+		$author = filter_var($author, FILTER_SANITIZE_STRING);
 
 		// create query template
-		$query	 = "SELECT tweetId, profileId, tweetContent, tweetDate FROM tweet WHERE tweetContent LIKE ?";
+		$query	 = "SELECT referenceId, author, journalName, linkType, pageNum FROM reference WHERE author LIKE ?";
 		$statement = $mysqli->prepare($query);
 		if($statement === false) {
 			throw(new mysqli_sql_exception("Unable to prepare statement"));
 		}
 
 		// bind the tweet content to the place holder in the template
-		$tweetContent = "%$tweetContent%";
-		$wasClean = $statement->bind_param("s", $tweetContent);
+		$author = "%$author%";
+		$wasClean = $statement->bind_param("s", $author);
 		if($wasClean === false) {
 			throw(new mysqli_sql_exception("Unable to bind parameters"));
 		}
@@ -346,11 +346,11 @@ class Reference {
 		}
 
 		// build an array of tweet
-		$tweets = array();
+		$authors = array();
 		while(($row = $result->fetch_assoc()) !== null) {
 			try {
-				$tweet	= new Tweet($row["tweetId"], $row["profileId"], $row["tweetContent"], $row["tweetDate"]);
-				$tweets[] = $tweet;
+				$author	= new Reference($row["referenceId"], $row["author"], $row["journalName"], $row["linkType"], $row["pageNum"]);
+				$authors[] = $author;
 			}
 			catch(Exception $exception) {
 				// if the row couldn't be converted, rethrow it
@@ -362,13 +362,13 @@ class Reference {
 		// 1) null if 0 results
 		// 2) a single object if 1 result
 		// 3) the entire array if > 1 result
-		$numberOfTweets = count($tweets);
-		if($numberOfTweets === 0) {
+		$numberOfAuthors = count($authors);
+		if($numberOfAuthors === 0) {
 			return(null);
-		} else if($numberOfTweets === 1) {
-			return($tweets[0]);
+		} else if($numberOfAuthors === 1) {
+			return($authors[0]);
 		} else {
-			return($tweets);
+			return($authors);
 		}
 	}
 }
