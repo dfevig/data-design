@@ -2,7 +2,7 @@
 /**
  * Class construction of the Article section of a Wikipedia page
  *
- * A small example of the construction of the contents the article table used for wikipedia.
+ * The construction of the Content the article table used for wikipedia.
  *
  * @author David Fevig <davidfevig@davidfevig.com>
  **/
@@ -19,18 +19,23 @@ class Article {
 	/**
 	 * the text content of the entire article
 	 */
-	private $contents;
+	private $textContent;
+	/**
+	 * the article title
+	 **/
+	private $articleTitle;
 
 	/**
 	 * constructor for Article
 	 *
 	 * making a place holder to be filled later
 	 **/
-	public function __construct($newArticleId, $newCategoryType, $newContents) {
+	public function __construct($newArticleId, $newCategoryType, $newTextContent, $newArticleTitle) {
 		try {
 			$this->setArtilceId($newArticleId);
 			$this->setCategoryType($newCategoryType);
-			$this->setContents($newContents);
+			$this->setTextContent($newTextContent);
+			$this->setArticleTitle($newArticleTitle);
 		} catch(InvalidArgumentException $invalidArgument){
 			throw(new InvalidArgumentException($invalidArgument->getMessage(),0,$invalidArgument));
 		}	catch(RangeException $range) {
@@ -59,7 +64,7 @@ class Article {
 			return;
 		}
 
-		// verify the contents id is valid
+		// verify the textContent id is valid
 		$newArticleId = filter_var($newArticleId, FILTER_VALIDATE_INT);
 		if($newArticleId === false) {
 			throw(new InvalidArgumentException("article id is not an integer"));
@@ -94,35 +99,35 @@ class Article {
 		if(empty($newCategoryType) === true) {
 			throw(new InvalidArgumentException("category type is empty or insecure"));
 		}
-		//store the tweet content
-		$this->author = $newCategoryType;
+		//store the category type
+		$this->categoryType = $newCategoryType;
 	}
 	/**
-	 * accessor method for contents
+	 * accessor method for textContent
 	 *
-	 * @return string value for contents
+	 * @return string value for textContent
 	 **/
-	public function getContents() {
-		return($this->contents);
+	public function getTextContent() {
+		return($this->textContent);
 	}
 	/**
-	 * mutator method for contents
+	 * mutator method for textContent
 	 *
-	 * @param string $newContents new value for the contents
-	 * @throws InvalidArgumentException if $newContents is not a string or insecure
+	 * @param string $newTextContent new value for the textContent
+	 * @throws InvalidArgumentException if $newtextContent is not a string or insecure
 	 **/
-	public function setContents($newContents) {
-		$newContents = trim($newContents);
-		$newContents = filter_var($newContents, FILTER_SANITIZE_STRING);
-		if(empty($newContents) === true) {
-			throw(new InvalidArgumentException("the contents is empty or insecure"));
+	public function setTextContent($newTextContent) {
+		$newTextContent = trim($newTextContent);
+		$newTextContent = filter_var($newTextContent, FILTER_SANITIZE_STRING);
+		if(empty($newTextContent) === true) {
+			throw(new InvalidArgumentException("the text content is empty or insecure"));
 		}
-		//store the contents
-		$this->contents = $newContents;
+		//store the text content
+		$this->textContent = $newTextContent;
 	}
 
 	/**
-	 * insert the contents into mySQL
+	 * insert the article into mySQL
 	 *
 	 * @param resource #mysqli pointer to mySQL connection by reference
 	 * @throws mysqli_sql_exception when mySQL related errors occur
@@ -132,18 +137,18 @@ class Article {
 		if(gettype($mysqli) !== "object" || get_class($mysqli) !== "mysqli") {
 			throw(new mysqli_sql_exception("input is not a mysqli object"));
 		}
-		//enforce the referenceId is null (i.e., don't insert a reference that already exists
+		//enforce the articleId is null (i.e., don't insert a reference that already exists
 		if($this->articleId !== null) {
 			throw(new mysqli_sql_exception("not a new article"));
 		}
 		// create query template
-		$query	= "INSERT INTO reference(articleId, categoryType, contents) VALUES (?,?,?)";
+		$query	= "INSERT INTO reference(articleId, categoryType, textContent, articleTitle) VALUES (?,?,?,?)";
 		$statement = $mysqli->prepare($query);
 		if($statement === false) {
 			throw(new mysqli_sql_exception("unable to prepare statement"));
 		}
 		//bind the member variables to the place holders in the template
-		$wasClean	= $statement->bind_param("iss", $this->articleId, $this->categoryType, $this->contents);
+		$wasClean	= $statement->bind_param("isss", $this->articleId, $this->categoryType, $this->textContent, $this->articleTitle);
 		if($wasClean === false) {
 			throw(new mysqli_sql_exception("unable to bind parameters"));
 		}
@@ -168,7 +173,7 @@ class Article {
 			throw(new mysqli_sql_exception("input is not a mysqli object"));
 		}
 
-		// enforce the referenceId is not null (i.e., don't delete a reference that hasn't been inserted)
+		// enforce the articleId is not null (i.e., don't delete an article that hasn't been inserted)
 		if($this->articleId === null) {
 			throw(new mysqli_sql_exception("unable to delete an article that does not exist"));
 		}
@@ -211,14 +216,14 @@ class Article {
 			throw(new mysqli_sql_exception("unable to update a article that does not exist"));
 		}
 		// create query template
-		$query	 = "UPDATE article SET categoryType = ?, contents = ? WHERE articleId = ?";
+		$query	 = "UPDATE article SET categoryType = ?, textContent = ?, articleTitle = ? WHERE articleId = ?";
 		$statement = $mysqli->prepare($query);
 		if($statement === false) {
 			throw(new mysqli_sql_exception("unable to prepare statement"));
 		}
 
 		// bind the member variables to the place holders in the template
-		$wasClean	= $statement->bind_param("iss", $this->articleId, $this->categoryType, $this->contents);
+		$wasClean	= $statement->bind_param("isss", $this->articleId, $this->categoryType, $this->textContent, $this->articleTitle);
 		if($wasClean === false) {
 			throw(new mysqli_sql_exception("unable to bind parameters"));
 		}
@@ -232,10 +237,10 @@ class Article {
 		$statement->close();
 	}
 	/**
-	 * gets the article by content
+	 * gets the article by category type
 	 *
 	 * @param resource $mysqli pointer to mySQL connection, by reference
-	 * @param string $contentType to search for
+	 * @param string $categoryType to search for
 	 * @return mixed array of Articles found, Article found, or null if not found
 	 * @throws mysqli_sql_exception when mySQL related errors occur
 	 **/
@@ -250,7 +255,7 @@ class Article {
 		$categoryType = filter_var($categoryType, FILTER_SANITIZE_STRING);
 
 		// create query template
-		$query	 = "SELECT articleId, contents FROM article WHERE categoryType LIKE ?";
+		$query	 = "SELECT articleId, textContent, articleTitle FROM article WHERE categoryType LIKE ?";
 		$statement = $mysqli->prepare($query);
 		if($statement === false) {
 			throw(new mysqli_sql_exception("Unable to prepare statement"));
@@ -278,7 +283,7 @@ class Article {
 		$categoryTypes = array();
 		while(($row = $result->fetch_assoc()) !== null) {
 			try {
-				$categoryType	= new Article($row["articleId"], $row["categoryType"], $row["contents"]);
+				$categoryType	= new Article($row["articleId"], $row["categoryType"], $row["textContent"], $row["articleId"]);
 				$categoryTypes[] = $categoryType;
 			}
 			catch(Exception $exception) {

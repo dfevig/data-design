@@ -13,15 +13,19 @@ class Reference {
 	 **/
 	private $referenceId;
 	/**
-	 * author name, this is a foreign key
+	 * id for the article; this is a foreign key
+	 **/
+	private $ariclteId;
+	/**
+	 * author name
 	 */
 	private $author;
 	/**
-	 * journal/article name, this is a foreign key
+	 * journal/article name
 	 */
 	private $journalName;
 		/**
-	 * link type used for reference, this is a foreign key
+	 * link type used for reference
 	 */
 	private $linkType;
 	/**
@@ -40,9 +44,10 @@ class Reference {
 	 * @throws InvalidArgumentException if data types are not valid
 	 * @throws RangeException if data values are out of bounds (e.g., incorrect strings, negative numbers)
 	 **/
-	public function __construct($newReferenceId, $newAuthor, $newJournalName, $newPageNum, $newLinkType) {
+	public function __construct($newReferenceId, $newArticleId, $newAuthor, $newJournalName, $newPageNum, $newLinkType) {
 		try {
 			$this->setReferenceId($newReferenceId);
+			$this->articleId($newArticleId);
 			$this->setAuthor($newAuthor);
 			$this->setJournalName($newJournalName);
 			$this->setPageNum($newPageNum);
@@ -89,6 +94,41 @@ class Reference {
 		}
 		// convert and store the reference id
 		$this->referenceId = intval($newReferenceId);
+	}
+	/**
+	 * accessor method for Article
+	 *
+	 * @return int value for article id
+	 */
+	public function getArticleId(){
+		return($this->articleId);
+	}
+	/**
+	 * mutator method for article id
+	 *
+	 * @param int $newArticleId new value for article id
+	 * @throws InvalidArgumentException if $newArticleId is not an integer
+	 * @throws RangeException if $newArticleId is not positive
+	 **/
+	public function setArticleId($newArticleId) {
+		// base case: if the article id is null, this reference without a mySQL assigned id (yet)
+		if($newArticleId === null) {
+			$this->articleId = null;
+			return;
+		}
+
+		// verify the textContent id is valid
+		$newArticleId = filter_var($newArticleId, FILTER_VALIDATE_INT);
+		if($newArticleId === false) {
+			throw(new InvalidArgumentException("article id is not an integer"));
+		}
+
+		// verify the article id is positive
+		if($newArticleId <= 0) {
+			throw(new RangeException("the article id is not a positive"));
+		}
+		// convert and store the article id
+		$this->articleId = intval($newArticleId);
 	}
 	/**
 	 * accessor method for author
@@ -321,7 +361,7 @@ class Reference {
 		$author = filter_var($author, FILTER_SANITIZE_STRING);
 
 		// create query template
-		$query	 = "SELECT referenceId, author, journalName, linkType, pageNum FROM reference WHERE author LIKE ?";
+		$query	 = "SELECT referenceId, articleId, author, journalName, linkType, pageNum FROM reference WHERE author LIKE ?";
 		$statement = $mysqli->prepare($query);
 		if($statement === false) {
 			throw(new mysqli_sql_exception("Unable to prepare statement"));
@@ -349,7 +389,7 @@ class Reference {
 		$authors = array();
 		while(($row = $result->fetch_assoc()) !== null) {
 			try {
-				$author	= new Reference($row["referenceId"], $row["author"], $row["journalName"], $row["linkType"], $row["pageNum"]);
+				$author	= new Reference($row["referenceId"], $row["articleId"], $row["author"], $row["journalName"], $row["linkType"], $row["pageNum"]);
 				$authors[] = $author;
 			}
 			catch(Exception $exception) {

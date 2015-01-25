@@ -6,6 +6,7 @@
 DROP TABLE IF EXISTS article;
 
 
+
 -- the CREATE TABLE function is a function that takes tons of arguments to layout the table's schema
 CREATE TABLE article (
 	-- this creates the attribute for the primary key
@@ -13,7 +14,8 @@ CREATE TABLE article (
 	-- not null means the attribute is required!
 	articleId INT UNSIGNED AUTO_INCREMENT NOT NULL,
 	categoryType VARCHAR(250) NOT NULL,
-	contents VARCHAR(250) NOT NULL,
+	articleTitle VARCHAR(350) NOT NULL,
+	textContent VARCHAR(250) NOT NULL,
 	PRIMARY KEY (articleId)
 );
 
