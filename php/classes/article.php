@@ -61,7 +61,7 @@ class Article {
 	 * mutator method for article id
 	 *
 	 * @param int $newArticleId new value for article id
-	 * @throws InvalidArgumentException if $newArticleId is not an integer
+	 * @throws InvalidArgume  ntException if $newArticleId is not an integer
 	 * @throws RangeException if $newArticleId is not positive
 	 **/
 	public function setArticleId($newArticleId) {
@@ -267,33 +267,32 @@ class Article {
 		$statement->close();
 	}
 	/**
-	 * gets the article by category type
+	 * gets the article by article id
 	 *
 	 * @param resource $mysqli pointer to mySQL connection, by reference
-	 * @param string $categoryType to search for
+	 * @param string $articleId to search for
 	 * @return mixed array of Articles found, Article found, or null if not found
 	 * @throws mysqli_sql_exception when mySQL related errors occur
 	 **/
-	public static function getArticleByCategoryType(&$mysqli, $categoryType) {
+	public static function getArticleByArticleId(&$mysqli, $articleId) {
 		// handle degenerate cases
 		if(gettype($mysqli) !== "object" || get_class($mysqli) !== "mysqli") {
 			throw(new mysqli_sql_exception("input is not a mysqli object"));
 		}
 
 		// sanitize the description before searching
-		$categoryType = trim($categoryType);
-		$categoryType = filter_var($categoryType, FILTER_SANITIZE_STRING);
+		$articleId = trim($articleId);
+		$articleId = filter_var($articleId, FILTER_VALIDATE_INT);
 
 		// create query template
-		$query	 = "SELECT articleId, textContent, articleTitle FROM article WHERE categoryType LIKE ?";
+		$query	 = "SELECT articleId, categoryType, textContent, articleTitle FROM article WHERE articleId = ?";
 		$statement = $mysqli->prepare($query);
 		if($statement === false) {
 			throw(new mysqli_sql_exception("Unable to prepare statement"));
 		}
 
 		// bind the categoryType content to the place holder in the template
-		$categoryType = "%categoryType%";
-		$wasClean = $statement->bind_param("s", $categoryType);
+		$wasClean = $statement->bind_param("i", $articleId);
 		if($wasClean === false) {
 			throw(new mysqli_sql_exception("Unable to bind parameters"));
 		}
@@ -310,11 +309,11 @@ class Article {
 		}
 
 		// build an array of categoryType
-		$categoryTypes = array();
+		$articleIds = array();
 		while(($row = $result->fetch_assoc()) !== null) {
 			try {
-				$categoryType	= new Article($row["articleId"], $row["categoryType"], $row["textContent"], $row["articleTitle"]);
-				$categoryTypes[] = $categoryType;
+				$articleId	= new Article($row["articleId"], $row["categoryType"], $row["textContent"], $row["articleTitle"]);
+				$articleIds[] = $articleId;
 			}
 			catch(Exception $exception) {
 				// if the row couldn't be converted, rethrow it
@@ -326,13 +325,13 @@ class Article {
 		// 1) null if 0 results
 		// 2) a single object if 1 result
 		// 3) the entire array if > 1 result
-		$numberOfArticles = count($categoryTypes);
+		$numberOfArticles = count($articleIds);
 		if($numberOfArticles === 0) {
 			return(null);
 		} else if($numberOfArticles === 1) {
-			return($categoryTypes[0]);
+			return($articleIds[0]);
 		} else {
-			return($categoryTypes);
+			return($articleIds);
 		}
 	}
 }
