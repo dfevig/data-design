@@ -1,32 +1,32 @@
 <?php
 /**
- * Class construction of the Article section of a Wikipedia page
+ * Class construction of the link collection of a Wikipedia page
  *
- * The construction of the Content the article table used for wikipedia.
+ * A small example of the construction of the links used in many wikipeidia articles.
  *
  * @author David Fevig <davidfevig@davidfevig.com>
  **/
 
-class Article {
+class Link {
 	/**
-	 * id for the article; this is a Primary Key
+	 * id for the link; this is a Primary Key
+	 **/
+	private $linkId;
+	/**
+	 * id for the article; this is a foreign key
 	 **/
 	private $articleId;
 	/**
-	 * category type for the wiki article
+	 * link URL
 	 */
-	private $categoryType;
+	private $linkUrl;
 	/**
-	 * the text content of the entire article
-	 **/
-	private $textContent;
-	/**
-	 * the article title
-	 **/
-	private $articleTitle;
+	 * link description
+	 */
+	private $linkDescription;
 
 	/**
-	 * constructor for Article
+	 * constructor for Link
 	 *
 	 * @param int $newArticleId id of the article
 	 * @param string $newArticleType string containing the article type
@@ -36,21 +36,57 @@ class Article {
 	 * @throws RangeException if data values are out of bounds (e.g., incorrect strings, negative numbers)
 	 *
 	 **/
-
-	public function __construct($newArticleId, $newCategoryType, $newTextContent, $newArticleTitle) {
+	public function __construct($newLinkId, $newArticleId, $newLinkUrl, $newLinkDescription) {
 		try {
+			$this->setLinkId($newLinkId);
 			$this->setArticleId($newArticleId);
-			$this->setCategoryType($newCategoryType);
-			$this->setTextContent($newTextContent);
-			$this->setArticleTitle($newArticleTitle);
-		} catch(InvalidArgumentException $invalidArgument){
+			$this->setLinkUrl($newLinkUrl);
+			$this->setLinkDescription($newLinkDescription);
+		}	catch(InvalidArgumentException $invalidArgument){
 			throw(new InvalidArgumentException($invalidArgument->getMessage(),0,$invalidArgument));
 		}	catch(RangeException $range) {
 			throw(new RangeException($range->getMessage(), 0 , $range));
 		}
 	}
+
+
 	/**
-	 * accessor method for Article
+	 * accessor method to link id
+	 *
+	 * @return int value of link id
+	 */
+	public function getLinkId(){
+		return($this->linkId);
+	}
+	/**
+	 * mutator method for link id
+	 *
+	 * @param int $newReferenceId new value of link id
+	 * @throws InvalidArgumentException if $newLinkId is not an integer
+	 * @throws RangeException if $newReferenceId is not positive
+	 **/
+	public function setLinkId($newLinkId) {
+		// base case: if the reference id is null, this reference without a mySQL assigned id (yet)
+		if($newLinkId === null) {
+			$this->linkId = null;
+			return;
+		}
+
+		// verify the link id is valid
+		$newLinkId = filter_var($newLinkId, FILTER_VALIDATE_INT);
+		if($newLinkId === false) {
+			throw(new InvalidArgumentException("link id is not an integer"));
+		}
+
+		// verify the link id is positive
+		if($newLinkId <= 0) {
+			throw(new RangeException("the link id is not a positive"));
+		}
+		// convert and store the link id
+		$this->linkId = intval($newLinkId);
+	}
+	/**
+	 * accessor method for article id
 	 *
 	 * @return int value for article id
 	 */
@@ -85,79 +121,56 @@ class Article {
 		$this->articleId = intval($newArticleId);
 	}
 	/**
-	 * accessor method for category type
+	 * accessor method for link URL
 	 *
-	 * @return string value for category type
+	 * @return valid URL link
 	 **/
-	public function getCategoryType() {
-		return($this->categoryType);
+	public function getlinkUrl() {
+		return($this->linkUrl);
 	}
 
 	/**
-	 * mutator method for category type
+	 * mutator method for the link URL
 	 *
-	 * @param string $newCategoryType new value for author
-	 * @throws InvalidArgumentException if $newCategoryType is not a string or insecure
+	 * @param valid url for $newLinkUrl for new url
+	 * @throws InvalidArgumentException if $newlinkUrl is not a valid or insecure
 	 **/
-	public function setCategoryType($newCategoryType) {
-		// verify the category type entered is secure
-		$newCategoryType = trim($newCategoryType);
-		$newCategoryType = filter_var($newCategoryType, FILTER_SANITIZE_STRING);
-		if(empty($newCategoryType) === true) {
-			throw(new InvalidArgumentException("category type is empty or insecure"));
+	public function setLinkUrl($newLinkUrl) {
+		// verify the author entered is secure
+		$newLinkUrl = trim($newLinkUrl);
+		$newLinkUrl = filter_var($newLinkUrl, FILTER_VALIDATE_URL);
+		if(empty($newLinkUrl) === true) {
+			throw(new InvalidArgumentException("link url is invalid or insecure"));
 		}
-		//store the category type
-		$this->categoryType = $newCategoryType;
+		//store the link url
+		$this->linkUrl = $newLinkUrl;
 	}
 	/**
-	 * accessor method for textContent
+	 * accessor method for link description
 	 *
-	 * @return string value for textContent
+	 * @return string value for link Url
 	 **/
-	public function getTextContent() {
-		return($this->textContent);
+	public function getLinkDescription() {
+		return($this->linkDesciption);
 	}
 	/**
-	 * mutator method for textContent
+	 * mutator method for link description
 	 *
-	 * @param string $newTextContent new value for the textContent
-	 * @throws InvalidArgumentException if $newtextContent is not a string or insecure
+	 * @param string $newLinkDescription new value for the link description
+	 * @throws InvalidArgumentException if $newLinkDesciption is not a string or insecure
 	 **/
-	public function setTextContent($newTextContent) {
-		$newTextContent = trim($newTextContent);
-		$newTextContent = filter_var($newTextContent, FILTER_SANITIZE_STRING);
-		if(empty($newTextContent) === true) {
-			throw(new InvalidArgumentException("the text content is empty or insecure"));
+	public function setLinkDescription($newLinkDescription) {
+		$newLinkDescription = trim($newLinkDescription);
+		$newLinkDescription = filter_var($newLinkDescription, FILTER_SANITIZE_STRING);
+		if(empty($newLinkDescription) === true) {
+			throw(new InvalidArgumentException("link description is empty or insecure"));
 		}
-		//store the text content
-		$this->textContent = $newTextContent;
-	}
-	/**
-	 * accessor method for articleTitle
-	 *
-	 * @return string value articleTitle
-	 **/
-	public function getArticleTitle() {
-		return($this->articleTitle);
-	}
-	/**
-	 * mutator method for articleTitle
-	 *
-	 * @param string $newArticleTitle new value for the textContent
-	 * @throws InvalidArgumentExceoption if $newArticleContent is not a string or insecure
-	 **/
-	public function setArticleTitle($newArticleTitle) {
-		$newArticleTitle = trim($newArticleTitle);
-		$newArticleTitle = filter_var($newArticleTitle,FILTER_SANITIZE_STRING);
-		if(empty($newArticleTitle) === true) {
-			throw(new InvalidArgumentException("the article title is empty or insecure"));
-		}
-		//store the text content
-		$this->articleTitle = $newArticleTitle;
+		//store the link description
+		$this->linkDesciption = $newLinkDescription;
 	}
 
 	/**
-	 * insert the article into mySQL
+	 * insert this link into mySQL
 	 *
 	 * @param resource #mysqli pointer to mySQL connection by reference
 	 * @throws mysqli_sql_exception when mySQL related errors occur
@@ -167,18 +180,18 @@ class Article {
 		if(gettype($mysqli) !== "object" || get_class($mysqli) !== "mysqli") {
 			throw(new mysqli_sql_exception("input is not a mysqli object"));
 		}
-		//enforce the articleId is null (i.e., don't insert a reference that already exists
-		if($this->articleId !== null) {
-			throw(new mysqli_sql_exception("not a new article"));
+		//enforce the referenceId is null (i.e., don't insert a link that already exsits)
+		if($this->linkId !== null) {
+			throw(new mysqli_sql_exception("not a new link"));
 		}
 		// create query template
-		$query	= "INSERT INTO article(articleId, categoryType, textContent, articleTitle) VALUES (?,?,?,?)";
+		$query	= "INSERT INTO link(linkId, articleId, linkUrl, linkDescription) VALUES (?,?,?,?,?)";
 		$statement = $mysqli->prepare($query);
 		if($statement === false) {
 			throw(new mysqli_sql_exception("unable to prepare statement"));
 		}
 		//bind the member variables to the place holders in the template
-		$wasClean	= $statement->bind_param("isss", $this->articleId, $this->categoryType, $this->textContent, $this->articleTitle);
+		$wasClean	= $statement->bind_param("iiss", $this->linkId, $this->ariclteId, $this->linkUrl, $this->linkDesciption);
 		if($wasClean === false) {
 			throw(new mysqli_sql_exception("unable to bind parameters"));
 		}
@@ -186,13 +199,13 @@ class Article {
 		if($statement->execute() === false) {
 			throw(new mysqli_sql_exception("unable to execute mySQL statement: " . $statement->error));
 		}
-		//update the null referenceId with what mySQL just gave us
-		$this->articleId = $mysqli->insert_id;
+		//update the null linkId with what mySQL just gave us
+		$this->linkId = $mysqli->insert_id;
 		//clean up statement
 		$statement->close();
 	}
 	/**
-	 * deletes the article from mySQL
+	 * deletes this Link from mySQL
 	 *
 	 * @param resource $mysqli pointer to mySQL connection, by reference
 	 * @throws mysqli_sql_exception when mySQL related errors occur
@@ -203,20 +216,20 @@ class Article {
 			throw(new mysqli_sql_exception("input is not a mysqli object"));
 		}
 
-		// enforce the articleId is not null (i.e., don't delete an article that hasn't been inserted)
-		if($this->articleId === null) {
-			throw(new mysqli_sql_exception("unable to delete an article that does not exist"));
+		// enforce the referenceId is not null (i.e., don't delete a reference that hasn't been inserted)
+		if($this->linkId === null) {
+			throw(new mysqli_sql_exception("unable to delete the link that does not exist"));
 		}
 
 		// create query template
-		$query	 = "DELETE FROM article WHERE articleId = ?";
+		$query	 = "DELETE FROM link WHERE linkId = ?";
 		$statement = $mysqli->prepare($query);
 		if($statement === false) {
 			throw(new mysqli_sql_exception("unable to prepare statement"));
 		}
 
 		// bind the member variables to the place holder in the template
-		$wasClean = $statement->bind_param("i", $this->articleId);
+		$wasClean = $statement->bind_param("i", $this->linkId);
 		if($wasClean === false) {
 			throw(new mysqli_sql_exception("unable to bind parameters"));
 		}
@@ -230,7 +243,7 @@ class Article {
 		$statement->close();
 	}
 	/**
-	 * updates the Reference in mySQL
+	 * updates the linkin mySQL
 	 *
 	 * @param resource $mysqli pointer to mySQL connection, by reference
 	 * @throws mysqli_sql_exception when mySQL related errors occur
@@ -241,19 +254,19 @@ class Article {
 			throw(new mysqli_sql_exception("input is not a mysqli object"));
 		}
 
-		// enforce the referenceId is not null (i.e., don't update a reference that hasn't been inserted)
-		if($this->articleId === null) {
-			throw(new mysqli_sql_exception("unable to update a article that does not exist"));
+		// enforce the linkId is not null (i.e., don't update a reference that hasn't been inserted)
+		if($this->linkId === null) {
+			throw(new mysqli_sql_exception("unable to update a reference that does not exist"));
 		}
 		// create query template
-		$query	 = "UPDATE article SET categoryType = ?, textContent = ?, articleTitle = ? WHERE articleId = ?";
+		$query	 = "UPDATE link SET articleId = ?, linkUrl = ?, linkDescription = ? WHERE linkId";
 		$statement = $mysqli->prepare($query);
 		if($statement === false) {
 			throw(new mysqli_sql_exception("unable to prepare statement"));
 		}
 
 		// bind the member variables to the place holders in the template
-		$wasClean	= $statement->bind_param("isss", $this->articleId, $this->categoryType, $this->textContent, $this->articleTitle);
+		$wasClean	= $statement->bind_param("iiss", $this->ariclteId, $this->linkUrl, $this->linkDesciption, $this->linkId);
 		if($wasClean === false) {
 			throw(new mysqli_sql_exception("unable to bind parameters"));
 		}
@@ -267,33 +280,33 @@ class Article {
 		$statement->close();
 	}
 	/**
-	 * gets the article by category type
+	 * gets the link by content
 	 *
 	 * @param resource $mysqli pointer to mySQL connection, by reference
-	 * @param string $categoryType to search for
-	 * @return mixed array of Articles found, Article found, or null if not found
+	 * @param string $linkUrl name  to search for
+	 * @return mixed array of Links found, Link found, or null if not found
 	 * @throws mysqli_sql_exception when mySQL related errors occur
 	 **/
-	public static function getArticleByCategoryType(&$mysqli, $categoryType) {
+	public static function getLinkByLinkUrl(&$mysqli, $linkUrl) {
 		// handle degenerate cases
 		if(gettype($mysqli) !== "object" || get_class($mysqli) !== "mysqli") {
 			throw(new mysqli_sql_exception("input is not a mysqli object"));
 		}
 
 		// sanitize the description before searching
-		$categoryType = trim($categoryType);
-		$categoryType = filter_var($categoryType, FILTER_SANITIZE_STRING);
+		$linkUrl = trim($linkUrl);
+		$linkUrl = filter_var($linkUrl, FILTER_SANITIZE_URL);
 
 		// create query template
-		$query	 = "SELECT articleId, textContent, articleTitle FROM article WHERE categoryType LIKE ?";
+		$query	 = "SELECT linkId, articleId, linkUrl, linkDescription FROM link WHERE linkUrl LIKE ?";
 		$statement = $mysqli->prepare($query);
 		if($statement === false) {
 			throw(new mysqli_sql_exception("Unable to prepare statement"));
 		}
 
-		// bind the categoryType content to the place holder in the template
-		$categoryType = "%categoryType%";
-		$wasClean = $statement->bind_param("s", $categoryType);
+		// bind the link url to the place holder in the template
+		$linkUrl = "%linkUrl%";
+		$wasClean = $statement->bind_param("s", $linkUrl);
 		if($wasClean === false) {
 			throw(new mysqli_sql_exception("Unable to bind parameters"));
 		}
@@ -309,16 +322,16 @@ class Article {
 			throw(new mysqli_sql_exception("Unable to get result set"));
 		}
 
-		// build an array of categoryType
-		$categoryTypes = array();
+		// build an array of tweet
+		$linkUrls = array();
 		while(($row = $result->fetch_assoc()) !== null) {
 			try {
-				$categoryType	= new Article($row["articleId"], $row["categoryType"], $row["textContent"], $row["articleTitle"]);
-				$categoryTypes[] = $categoryType;
+				$linkUrl	= new Link($row["linkId"], $row["articleId"], $row["linkUrl"], $row["linkDescription"]);
+				$linkUrls[] = $linkUrl;
 			}
 			catch(Exception $exception) {
 				// if the row couldn't be converted, rethrow it
-				throw(new mysqli_sql_exception("Unable to convert row to Article", 0, $exception));
+				throw(new mysqli_sql_exception("Unable to convert row to Tweet", 0, $exception));
 			}
 		}
 
@@ -326,16 +339,15 @@ class Article {
 		// 1) null if 0 results
 		// 2) a single object if 1 result
 		// 3) the entire array if > 1 result
-		$numberOfArticles = count($categoryTypes);
-		if($numberOfArticles === 0) {
+		$numberOfLinkUrls = count($linkUrl);
+		if($numberOfLinkUrls === 0) {
 			return(null);
-		} else if($numberOfArticles === 1) {
-			return($categoryTypes[0]);
+		} else if($numberOfLinkUrls === 1) {
+			return($linkUrls[0]);
 		} else {
-			return($categoryTypes);
+			return($linkUrls);
 		}
 	}
 }
 
 ?>
-

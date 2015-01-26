@@ -1,10 +1,10 @@
 <?php
 //first, require the SimpleTest framework <http://simpletest.org/>
 //this path is *NOT* universal, but deployed on the bootcamp-coders server
-//require_once("/usr/lib/php5/simpletest/autorun.php");
+require_once("/usr/lib/php5/simpletest/autorun.php");
 
 // next, require the class from the project under scrutiny
-require_once( $_SERVER["/usr/lib/php5/simpletest/autorun.php"] . "../php/classes/article.php");
+require_once("article.php");
 
 /**
  * Unit test for the Article Class

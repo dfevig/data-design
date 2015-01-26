@@ -1,8 +1,8 @@
 <?php
 //first require your class
-require_once("reference.php");
+require_once("article.php");
 
-$reference = new Reference(null, "Mike P.", "New Med Journal", 15, "http://www.youtube.com");
+$article = new Article(null, "science","Paragraphs", "Stuff");
 
 // connect to mySQL and populate the database
 // yes, this is bad - but we'll isolate the parameters later.
@@ -14,13 +14,13 @@ try {
 	$mysqli = new mysqli('localhost', 'dfevig', 'fymurieldrynoaalawpx', 'dfevig');
 
 	// now, insert into mySQL
-	$reference->insert($mysqli);
+	$article->insert($mysqli);
 
 	//finally, disconnet form mySQL
 	$mysqli->close();
 
 	//var_dump the result to affirm we got a real primary key
-	var_dump($reference);
+	var_dump($article);
 
 } catch(Exception $exception) {
 	echo "Exception: " . $exception->getMessage() . "<br />";
